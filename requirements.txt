@@ -1,0 +1,27 @@
+# 核心依赖（Day 1 安装）
+# 安装命令：uv pip install --python .venv/bin/python -r requirements.txt
+
+# 数据处理（第 3 周重点）
+pandas==3.0.6
+numpy==2.5.4
+
+# 可视化
+matplotlib==3.11.2
+
+# HTTP 请求，调用外部 API（第 2 周开始用）
+requests==2.34.2
+
+# 快速做界面（第 4 周重点）
+streamlit==1.66.0
+
+# Jupyter 笔记本环境（全程使用）
+jupyter==1.1.1
+ipykernel==7.4.0
+
+# ── 后续会陆续加入 ──
+# fastapi / uvicorn        第 3 周：后端接口
+# python-dotenv            第 2 周：读取 .env 密钥文件
+# openai                   第 8 周：调用大模型（OpenAI 兼容格式）
+# chromadb                 第 9 周：向量数据库
+# pypdf / openpyxl         第 9 周：文档处理
+# langchain / langgraph    第 10 周：Agent 编排

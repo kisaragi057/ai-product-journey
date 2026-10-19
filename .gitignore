@@ -1,0 +1,32 @@
+# ── Python ──
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# ── 虚拟环境（体积大且可由 requirements.txt 重建，不入库）──
+.venv/
+venv/
+env/
+
+# ── 密钥文件：绝对不能提交到 Git ──
+# 这是最重要的安全习惯。API Key 一旦推上 GitHub，几分钟内就会被人扫走盗用。
+.env
+.env.local
+*.key
+*.pem
+
+# ── 系统与编辑器 ──
+.DS_Store
+.vscode/
+.idea/
+
+# ── 数据文件（通常体积大，另行管理）──
+data/
+*.csv
+*.xlsx
+!examples/*.csv
+
+# ── uv ──
+uv.lock
