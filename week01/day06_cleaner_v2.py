@@ -195,7 +195,7 @@ def classify_lines(lines: list[str], header: str, expected_fields: int):
     raise NotImplementedError("classify_lines 还没写 —— 平铺版第 1 步的循环搬过来")
 
 
-def clean_row(parts: list[str], line_num: int) -> dict:
+def clean_row(parts: list[str], line_num: int) -> tuple[dict, list]:
     """把一行已经拆好的字段清洗成一条规范记录。
 
     参数:
@@ -203,8 +203,10 @@ def clean_row(parts: list[str], line_num: int) -> dict:
         line_num: 原始行号，用于报告里定位
 
     返回:
-        dict，键为：行号 日期 品名 类别 数量 单位 单价 原金额
-        其中 数量/单价/原金额 是 float 或 None（用 to_number 转）
+        两个值（元组）：
+          record       dict，键为 行号 日期 品名 类别 数量 单位 单价 原金额
+                       其中 数量/单价/原金额 是 float 或 None（用 to_number 转）
+          row_repairs  list，本行产生的修补记录，每项 (行号, 原因, 细节)
 
     要做的六件事（平铺版第 2 步里都有）:
         1. 每个字段 strip 去首尾空格；原本带空格的 → 记进 repair_log
@@ -223,7 +225,75 @@ def clean_row(parts: list[str], line_num: int) -> dict:
        顺带体会一件事：**定好接口契约，能替团队挡住坏写法。**
        这就是为什么正式项目里函数签名比函数体更早被讨论。
     """
-    raise NotImplementedError("clean_row 还没写 —— 平铺版第 2 步的循环体搬过来")
+    # ★ 你的代码从这里开始（正确位置：docstring 的那个 """ 之后，缩进 4 格）
+    row_repairs = []        # 本行的修补记录，最后随返回值交给调用方
+
+    # 一次拆开七个字段。若 parts 不是 7 个，这里会 ValueError ——
+    # 但 classify_lines 已经用 len 拦过了，所以这里【不需要 try】。
+    raw_date, raw_name, raw_cat, raw_qty, raw_unit, raw_price, raw_amount = parts
+
+    # 2.1 去首尾空格
+    date_s = raw_date.strip()
+    name_s = raw_name.strip()
+    cat_s = raw_cat.strip()
+    qty_s = raw_qty.strip()
+    unit_s = raw_unit.strip()
+    price_s = raw_price.strip()
+    amount_s = raw_amount.strip()
+
+    # 原本带空格的，留痕（品名和类别最容易出现）
+    for label, raw_v, clean_v in [("品名", raw_name, name_s), ("类别", raw_cat, cat_s)]:
+        if raw_v != clean_v:
+            row_repairs.append((line_num, f"{label}去空格", f"{raw_v!r} → {clean_v!r}"))
+
+    # 2.2 日期统一为 YYYY-MM-DD
+    date_fixed = to_halfwidth(date_s).replace("/", "-")
+    if date_fixed != date_s:
+        row_repairs.append((line_num, "日期格式统一", f"{date_s!r} → {date_fixed!r}"))
+    year_part = date_fixed.split("-")[0]
+    if not (len(year_part) == 4 and year_part.isdigit()):
+        # 不合法的只标记，不猜怎么改 —— 猜出来的日期比空的更危险
+        row_repairs.append((line_num, "日期可疑（未自动修正）", f"{date_fixed!r} 不是 YYYY-MM-DD"))
+
+    # 2.3 品名归一：查得到就用标准名，查不到原样保留
+    key = normalize_key(name_s)
+    if key in NAME_ALIAS:
+        if NAME_ALIAS[key] != name_s:
+            row_repairs.append((line_num, "品名归一", f"{name_s!r} → {NAME_ALIAS[key]!r}"))
+        name_fixed = NAME_ALIAS[key]
+    else:
+        name_fixed = name_s
+
+    # 2.4 类别只去空格，不做归并（超白 / M2 是填错位置，不是写法差异）
+    cat_fixed = cat_s
+
+    # 2.5 单位映射
+    if unit_s in UNIT_MAP:
+        if UNIT_MAP[unit_s] != unit_s:
+            row_repairs.append((line_num, "单位统一", f"{unit_s!r} → {UNIT_MAP[unit_s]!r}"))
+        unit_fixed = UNIT_MAP[unit_s]
+    else:
+        unit_fixed = unit_s
+        row_repairs.append((line_num, "单位未知", f"{unit_s!r} 不在映射表里，原样保留"))
+
+    # 2.6 文本转数字。失败返回 None，由 validate_and_recompute 决定怎么处置
+    qty = to_number(qty_s)
+    price = to_number(price_s)
+    amount_raw = to_number(amount_s)
+    if qty is None:
+        row_repairs.append((line_num, "数量无法转数字", f"{qty_s!r} → None"))
+
+    record = {
+        "行号": line_num,
+        "日期": date_fixed,
+        "品名": name_fixed,
+        "类别": cat_fixed,
+        "数量": qty,
+        "单位": unit_fixed,
+        "单价": price,
+        "原金额": amount_raw,
+    }
+    return record, row_repairs
 
 
 def validate_and_recompute(records: list[dict]):
