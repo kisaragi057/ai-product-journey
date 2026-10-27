@@ -136,6 +136,38 @@ def split_lines(path: str) -> list[str]:
 # ══════════════════════════════════════════════════════════
 
 def classify_lines(lines: list[str], header: str, expected_fields: int):
+    good_rows = []
+    noise_rows = []
+    repair_log = []
+    bad_rows = []
+
+    for line_num, raw_line in enumerate(lines, start=1):
+        if not raw_line.strip():
+            noise_rows.append((line_num, "空行"))
+            continue
+            
+        if raw_line.strip() == header:
+            if line_num == 1:
+                noise_rows.append((line_num, "表头 （第一行，正常）"))
+            else:
+                noise_rows.append((line_num, "重复表头（出现在中间）"))
+            continue
+        
+        parts = raw_line.split(",")
+        if len(parts) == expected_fields + 1:
+            if parts[-2].startswith('"') and parts[-1].endswith('"'):
+                merged = parts[-2] + "," + parts[-1]
+                parts = parts[:-2] + [merged]
+                repair_log.append((line_num, "金额含引号千分位", '"684,000.00" → 684,000.00'))
+        
+        if len(parts) != expected_fields:
+            bad_rows.append((line_num, f"字段数={len(parts)} (应为{expected_fields})", raw_line))
+            continue
+        good_rows.append({"行号": line_num, "字段": parts})
+
+    return good_rows, noise_rows, repair_log, bad_rows
+        
+                   
     """把行分成四类。
 
     参数:
