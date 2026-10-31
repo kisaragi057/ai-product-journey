@@ -29,6 +29,9 @@ day06_cleaner_v2.py —— 脏数据清洗与汇总工具【重构版】
 # ══════════════════════════════════════════════════════════
 # 常量（不用动）
 # ══════════════════════════════════════════════════════════
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
 
 FILE_PATH = "week01/day06_dirty.txt"
 EXPECTED_FIELDS = 7
@@ -127,7 +130,7 @@ def split_lines(path: str) -> list[str]:
         —— 因为这样才能换文件复用、才能单独测试。这是第 5 节「不碰外面
            的世界」的第一次实际应用：数据从参数进，从 return 出。
     """
-    with open(path, encoding="utf-8") as f:
+    with open(ROOT / path, encoding="utf-8") as f:
         return f.read().split("\n")
 
 
