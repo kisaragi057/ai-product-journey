@@ -77,7 +77,11 @@ def build_chart(date_str: str, time_str: str, name: str, gender: str) -> str:
 
     # EightChar 的四个柱。立春分年这块是精确到分钟的（已实测验证）。
     pillars = [ec.getYear(), ec.getMonth(), ec.getDay(), ec.getTime()]
-
+    if dt.hour >= 23:
+        # 23:00-24:00 出生的，日柱按【次日】（早子时派）
+        nd = dt + timedelta(days=1)
+        pillars[2] = Solar.fromYmdHms(nd.year, nd.month, nd.day, nd.hour, nd.minute, 0).getLunar().getEightChar().getDay()
+        
     wx = {}
     for p in pillars:
         for ch in p:
