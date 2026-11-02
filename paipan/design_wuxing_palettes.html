@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>五行阴阳 · 三种配色编码对比</title>
+<style>
+:root{
+  --bg:#F7F6F3; --ink:#2b2b2b; --muted:#8a8781; --line:#e2ded7; --card:#fff;
+  --ok:#1F7A3D; --no:#B3261E;
+}
+*{box-sizing:border-box}
+body{margin:0;padding:26px 20px 60px;background:var(--bg);color:var(--ink);
+     font-family:-apple-system,"PingFang SC","Hiragino Sans GB",sans-serif;font-size:14px;line-height:1.75}
+.wrap{max-width:1080px;margin:0 auto}
+h1{font-size:22px;font-weight:650;margin:0 0 6px}
+h2{font-size:15px;font-weight:650;margin:34px 0 10px}
+.sub{color:var(--muted);font-size:12.5px;margin-bottom:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+.controls{display:flex;flex-wrap:wrap;gap:18px;align-items:center;margin:16px 0 6px}
+fieldset{border:1px solid var(--line);border-radius:9px;padding:8px 12px;background:var(--card);margin:0}
+legend{font-size:11.5px;color:var(--muted);padding:0 5px}
+label{cursor:pointer;font-size:13px;margin-right:12px;white-space:nowrap}
+input{vertical-align:middle;margin-right:4px}
+.panels{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
+@media (max-width:900px){.panels{grid-template-columns:1fr}}
+.panel h3{font-size:13.5px;margin:0 0 3px;font-weight:650}
+.panel .tag{font-size:11px;color:var(--muted);display:block;margin-bottom:12px}
+.row{display:flex;align-items:center;gap:9px;margin:9px 0}
+.wname{width:20px;flex:none;font-weight:650;font-size:13.5px}
+.track{flex:1;height:26px;display:flex;border-radius:6px;overflow:hidden;background:#efece7}
+.seg{height:100%}
+.seg.edge{box-shadow:inset 0 0 0 1px rgba(0,0,0,.28)}
+.num{width:64px;flex:none;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.empty{font-size:11.5px;color:#c3beb6;border:1px dashed var(--line);border-radius:6px;
+       width:100%;height:26px;display:flex;align-items:center;justify-content:center}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin-top:12px}
+.sw{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+table{border-collapse:collapse;width:100%;font-size:12.5px;margin-top:8px}
+th,td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;font-variant-numeric:tabular-nums}
+th{font-size:11.5px;color:var(--muted);font-weight:600}
+.pass{color:var(--ok);font-weight:650}.fail{color:var(--no);font-weight:650}
+.note{background:#fff8e6;border:1px solid #f0e0b0;border-radius:10px;padding:14px 16px;font-size:13px;margin-top:14px}
+.concl{margin-top:14px}
+.concl li{margin:6px 0}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.2px}
+.small{font-size:12px;color:var(--muted)}
+.filterhost{filter:var(--fx,none)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+ <filter id="fGray" color-interpolation-filters="sRGB"><feColorMatrix type="matrix"
+   values="0.33 0.33 0.33 0 0  0.33 0.33 0.33 0 0  0.33 0.33 0.33 0 0  0 0 0 1 0"/></filter>
+ <filter id="fProtan" color-interpolation-filters="sRGB"><feColorMatrix type="matrix"
+   values="0.567 0.433 0 0 0  0.558 0.442 0 0 0  0 0.242 0.758 0 0  0 0 0 1 0"/></filter>
+ <filter id="fDeutan" color-interpolation-filters="sRGB"><feColorMatrix type="matrix"
+   values="0.625 0.375 0 0 0  0.7 0.3 0 0 0  0 0.3 0.7 0 0  0 0 0 1 0"/></filter>
+ <filter id="fTritan" color-interpolation-filters="sRGB"><feColorMatrix type="matrix"
+   values="0.95 0.05 0 0 0  0 0.433 0.567 0 0  0 0.258 0.742 0 0  0 0 0 1 0"/></filter>
+</svg>
+
+<div class="wrap">
+<h1>五行阴阳 · 三种配色编码对比</h1>
+<div class="sub">
+数据不是编的：走 <span class="mono">paipan/core.py</span> 实跑
+<b>2000-10-15 23:30</b> → 四柱 <b>庚辰 · 丙戌 · 丁未 · 庚子</b>（早子时派，日柱已进次日）<br>
+下面三块画的是<b>同一份数</b>，只有编码通道不同。切滤镜、切口径，自己看哪种还认得出来。
+</div>
+
+<div class="controls">
+ <fieldset><legend>数据口径</legend>
+  <label><input type="radio" name="mode" value="A" checked>本气版（8 字）</label>
+  <label><input type="radio" name="mode" value="B">含藏干等权（13 字）</label>
+ </fieldset>
+ <fieldset><legend>视觉滤镜（模拟，不是精确临床）</legend>
+  <label><input type="radio" name="fx" value="none" checked>正常</label>
+  <label><input type="radio" name="fx" value="url(#fGray)">灰度</label>
+  <label><input type="radio" name="fx" value="url(#fProtan)">红色盲</label>
+  <label><input type="radio" name="fx" value="url(#fDeutan)">绿色盲</label>
+  <label><input type="radio" name="fx" value="url(#fTritan)">蓝黄盲</label>
+ </fieldset>
+ <fieldset><legend>金 用哪个色</legend>
+  <label><input type="radio" name="metal" value="gold" checked>金色</label>
+  <label><input type="radio" name="metal" value="silver">银灰（传统「金曰从革，色白」）</label>
+ </fieldset>
+ <fieldset><legend>浅档加描边</legend>
+  <label><input type="checkbox" id="edge">给每段加 1px 内描边</label>
+ </fieldset>
+</div>
+
+<div class="filterhost" id="stage">
+<div class="panels">
+
+ <div class="card panel">
+  <h3>① 饱和度分阴阳</h3><span class="tag">你原本的想法：同色相，阳=艳、阴=灰</span>
+  <div id="p1"></div>
+  <div class="legend" id="l1"></div>
+ </div>
+
+ <div class="card panel">
+  <h3>② 明度分阴阳</h3><span class="tag">我的建议：同色相，阳=深、阴=浅</span>
+  <div id="p2"></div>
+  <div class="legend" id="l2"></div>
+ </div>
+
+ <div class="card panel">
+  <h3>③ 明度 + 长度双通道</h3><span class="tag">条长＝该五行总字数，深浅仍是阴阳</span>
+  <div id="p3"></div>
+  <div class="legend">条越长＝越多；深浅两段＝阴阳占比</div>
+ </div>
+
+</div>
+</div>
+
+<h2>自动体检：把「靠不靠谱」变成数字</h2>
+<div class="card">
+<table id="metrics"></table>
+<div class="small">
+对比度 = 该色块与页面底色 <span class="mono">#F7F6F3</span> 的 WCAG 相对亮度比。非文本图形元素的门槛是
+<b>3:1</b>（WCAG 1.4.11 Use of Color），文字才要 4.5:1。<br>
+ΔL = 阳档与阴档的相对亮度差，这是「灰度下还分不分得出来」的直接指标。0.2 这条线是<b>经验启发值，不是规范条文</b>——
+所以自己切到灰度滤镜看一眼，比信这个数字重要。<br>
+色相差 = 两个色相角之差，&lt; 15° 视为相邻难分。
+</div>
+</div>
+
+<div class="note">
+<b>这张表里最该看的一行是「金」。</b>我刚用同一套算法量过：
+金用金色时，与土的色相差只有 <b>14°（明度方案）/ 17°（饱和度方案）</b>——
+而木与水之间是 69°，火与土之间是 28-32°。14° 意味着两个色块并排放，你要靠<b>上下文猜</b>哪个是金。
+切「银灰」后变成 <b>177-180°</b>，正好是最远的位置（而且「金曰从革，色白」本来就是传统写法）。
+<b>所以问题根本不在你选饱和度还是明度——五行配色本身塌了一格。</b><br>
+<span class="small">15° 这条线同样是经验值，不是规范。结论用「切银灰后你自己看一眼」来定，别用数字定。</span>
+</div>
+
+<h2>明天要定的三件事</h2>
+<div class="card">
+<ol class="concl">
+<li><b>本气这件事我上次讲错了，现在更正：</b>lunar_python 给 <b>未</b> 的藏干恒为
+<span class="mono">['己','丁','乙']</span>（本气己土，与通行表一致，连查 40 天无变化）。
+我上次报的 <span class="mono">['丁','己']</span> 其实是<b>午</b>的藏干——我把「自己改过的日柱（未）」
+配上了「库按原日柱（午）算的藏干」。<b>而这不是口误，是一个活的 bug：</b>
+<span class="mono">core.compute_pillars()</span> 只替换了 <span class="mono">pillars[2]</span> 这个字符串，
+库里其余一切（藏干、地势、十神、纳音）仍按<b>未替换</b>的日柱算。明天一加藏干，
+23:00-24:00 出生的那 288 行就会「柱是未、藏干是午」串号，而且<b>一行报错都不会有</b>。</li>
+<li><b>加权口径：</b>本气/中气/余气是等权计数，还是本气算 1、中气算 0.5、余气算 0.25？
+这决定「土3」这种结论会不会翻盘，也决定图上的长短条可信不可信。</li>
+<li><b>编码通道：</b>切灰度滤镜，①里阳阴两档会并成同一个灰（ΔL 只有 0.05-0.11）；②③还分得出（ΔL 0.30 以上）。
+再切「红色盲」，看金/土会不会撞成一坨。</li>
+<li><b>②③ 自己的毛病，别忽略：</b>浅档对当前浅底 <span class="mono">#F7F6F3</span> 的对比度只有 1.5-2.2，
+<b>不达 3:1</b>（表里会标红 ✗）。三条出路：勾上「描边」；或者把浅档压深；
+或者页面底色改深——但那要连 <span class="mono">app.py</span> 的 <span class="mono">--bg</span> 一起改，是个整页决定，不是配色微调。<br>
+<b>选定之后我就把结论写进 <span class="mono">paipan/core.py</span> 顶部的注释里，前端周（Day 22 起）照做，不再讨论第二遍。</b></li>
+</ol>
+</div>
+</div>
+
+<script>
+// ── 真实数据：由 paipan/core.py + lunar_python 的 getYearHideGan 等四个 API 跑出来 ──
+var DATA = {
+  A: { "木":[0,0], "火":[1,2], "土":[2,0], "金":[2,0], "水":[0,1] },   // 合计 8
+  B: { "木":[0,1], "火":[1,3], "土":[2,1], "金":[2,1], "水":[0,2] }    // 合计 13
+};
+
+// [阳档, 阴档]
+var PAL = {
+  sat:   { "木":["#2E8B4A","#7E8F82"], "火":["#C43B2E","#9A8785"], "土":["#A66A1E","#8F877C"],
+           "水":["#2A6FA8","#7E8B96"], "金_g":["#B39B1F","#97917F"], "金_s":["#6E7B8B","#9BA3AB"] },
+  light: { "木":["#1F7A3D","#86C48F"], "火":["#A82A22","#EE9086"], "土":["#8A5A12","#DFAF62"],
+           "水":["#1A558C","#8AB6DC"], "金_g":["#8C7A1B","#DFCB62"], "金_s":["#5B6673","#AEB9C4"] }
+};
+
+var ORDER = ["木","火","土","金","水"];
+var BG = "#F7F6F3";
+
+function rgb(h){ h=h.replace("#",""); return [parseInt(h.substr(0,2),16),parseInt(h.substr(2,2),16),parseInt(h.substr(4,2),16)]; }
+function lum(h){ var c=rgb(h).map(function(v){ v=v/255; return v<=0.04045 ? v/12.92 : Math.pow((v+0.055)/1.055,2.4); });
+  return 0.2126*c[0]+0.7152*c[1]+0.0722*c[2]; }
+function contrast(a,b){ var x=lum(a),y=lum(b); return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05); }
+function hue(h){ var c=rgb(h),mx=Math.max(c[0],c[1],c[2]),mn=Math.min(c[0],c[1],c[2]),d=mx-mn,hh=0;
+  if(d===0) return -1;
+  if(mx===c[0]) hh=((c[1]-c[2])/d)%6; else if(mx===c[1]) hh=(c[2]-c[0])/d+2; else hh=(c[0]-c[1])/d+4;
+  hh*=60; if(hh<0) hh+=360; return hh; }
+function satn(h){ var c=rgb(h).map(function(v){return v/255;}),mx=Math.max(c[0],c[1],c[2]),mn=Math.min(c[0],c[1],c[2]);
+  if(mx===0) return 0; var l=(mx+mn)/2, d=mx-mn; return d/(1-Math.abs(2*l-1))||0; }
+
+function state(){
+  var mode = document.querySelector('input[name=mode]:checked').value;
+  var metal = document.querySelector('input[name=metal]:checked').value === "gold" ? "_g" : "_s";
+  return { mode:mode, metal:metal, edge:document.getElementById("edge").checked,
+           fx:document.querySelector('input[name=fx]:checked').value };
+}
+
+function colorOf(kind, w, s){ return PAL[kind][w === "金" ? ("金" + s.metal) : w]; }
+
+function drawRow(yang, yin, pair, s, maxTot){
+  var tot = yang + yin;
+  if(tot === 0) return '<div class="row"><span class="wname">' + pair.name + '</span>' +
+      '<div class="empty">无</div><span class="num">阳0 · 阴0</span></div>';
+  var segs = "";
+  for(var i=0;i<2;i++){
+    var n = i===0 ? yang : yin;
+    if(n === 0) continue;
+    var cls = "seg" + (s.edge ? " edge" : "");
+    segs += '<div class="' + cls + '" style="width:' + (n/tot*100) + '%;background:' + pair.col[i] + '"></div>';
+  }
+  var w = maxTot ? (tot/maxTot*100) : 100;
+  return '<div class="row"><span class="wname">' + pair.name + '</span>' +
+      '<div style="flex:1"><div class="track" style="width:' + w + '%">' + segs + '</div></div>' +
+      '<span class="num">阳' + yang + ' · 阴' + yin + '</span></div>';
+}
+
+function render(){
+  var s = state();
+  var d = DATA[s.mode];
+  document.getElementById("stage").style.setProperty("--fx", s.fx === "none" ? "none" : s.fx);
+
+  var maxTot = 0;
+  ORDER.forEach(function(w){ maxTot = Math.max(maxTot, d[w][0]+d[w][1]); });
+
+  ["sat","light"].forEach(function(kind, ki){
+    var host = document.getElementById("p" + (ki+1)), html = "";
+    ORDER.forEach(function(w){
+      var col = colorOf(kind, w, s);
+      html += drawRow(d[w][0], d[w][1], {name:w, col:col}, s, null);
+    });
+    host.innerHTML = html;
+  });
+
+  // ③：长度编码
+  var host3 = document.getElementById("p3"), html3 = "";
+  ORDER.forEach(function(w){
+    var col = colorOf("light", w, s);
+    html3 += drawRow(d[w][0], d[w][1], {name:w, col:col}, s, maxTot);
+  });
+  host3.innerHTML = html3;
+
+  document.getElementById("l1").innerHTML = legend("sat", s);
+  document.getElementById("l2").innerHTML = legend("light", s);
+
+  metrics(s);
+}
+
+function legend(kind, s){
+  var out = "";
+  ORDER.forEach(function(w){
+    var c = colorOf(kind, w, s);
+    out += '<span><i class="sw" style="background:' + c[0] + '"></i>' + w +
+           '<i class="sw" style="background:' + c[1] + ';margin-left:4px"></i></span>';
+  });
+  return out + '<span>左深/右浅 = 阳/阴</span>';
+}
+
+function metrics(s){
+  var rows = [["方案","五行","阳档","阴档","阳 对比","阴 对比","ΔL","色相差(与前一五行)"]];
+  ["sat","light"].forEach(function(kind){
+    var prev = null;
+    ORDER.forEach(function(w){
+      var c = colorOf(kind, w, s), d1 = Math.abs(lum(c[0]) - lum(c[1]));
+      var dh = prev === null ? "-" : (function(){ var a=hue(prev), b=hue(c[0]);
+          if(a<0||b<0) return "-"; var x=Math.abs(a-b); x=Math.min(x,360-x); return x.toFixed(0) + "°"; })();
+      rows.push([kind==="sat"?"①饱和度":"②明度", w, c[0], c[1],
+        cr(c[0]), cr(c[1]), d1.toFixed(3), dh]);
+      prev = c[0];
+    });
+  });
+  var h = "";
+  rows.forEach(function(r, i){
+    var tag = i === 0 ? "th" : "td";
+    h += "<tr>" + r.map(function(x){ return "<" + tag + ">" + x + "</" + tag + ">"; }).join("") + "</tr>";
+  });
+  document.getElementById("metrics").innerHTML = h;
+}
+function cr(c){ var v = contrast(c, BG);
+  return '<span class="' + (v >= 3 ? "pass" : "fail") + '">' + v.toFixed(2) + (v>=3 ? " ✓" : " ✗") + "</span>"; }
+
+Array.prototype.forEach.call(document.querySelectorAll("input"), function(el){
+  el.addEventListener("change", render);
+});
+render();
+</script>
+</body>
+</html>

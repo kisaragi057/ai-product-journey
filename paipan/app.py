@@ -6,6 +6,11 @@ paipan/app.py —— 八字排盘 v0.1（Day 13 实践日，新赛道第一个�
   · 23:00-24:00 出生的，日柱按【次日】（早子时派）
   · 用户输入公历日期 + 时间，页面显示换算出的时辰
 
+Day 15 的变化：排盘算法搬去 core.py 了，这个文件只管「网页」。
+  为什么：batch.py 要批量跑两万个生日，命令行也要跑，网页还要跑。
+  同一份算法写三遍，迟早分叉 —— 所以谁都 import core，只此一份。
+  你现在看的这个文件里出现的所有命理名词，都来自 core，不来自这里。
+
 运行：
     .venv/bin/python paipan/app.py
 然后浏览器打开 http://127.0.0.1:8000
@@ -15,14 +20,9 @@ paipan/app.py —— 八字排盘 v0.1（Day 13 实践日，新赛道第一个�
 
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse, parse_qs
-from datetime import datetime, timedelta
-from lunar_python import Solar
+from datetime import datetime
 
-GAN_WX = {"甲": "木", "乙": "木", "丙": "火", "丁": "火", "戊": "土",
-          "己": "土", "庚": "金", "辛": "金", "壬": "水", "癸": "水"}
-ZHI_WX = {"子": "水", "丑": "土", "寅": "木", "卯": "木", "辰": "土", "巳": "火",
-          "午": "火", "未": "土", "申": "金", "酉": "金", "戌": "土", "亥": "水"}
-SHICHEN = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"]
+from core import compute_pillars, shichen_of, wuxing_count, lunar_date_str
 
 PAGE = """<!doctype html><html lang=zh><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width,initial-scale=1">
@@ -59,42 +59,21 @@ button{{margin-top:18px;width:100%;padding:11px;background:#2b2b2b;color:#fff;bo
 ZHU_LABEL = ["年柱", "月柱", "日柱", "时柱"]
 
 
-def shichen_of(hour: int) -> str:
-    """把 0-23 点换算成十二时辰名。子时跨 23 点和 0 点，这是个边界陷阱。"""
-    idx = ((hour + 1) // 2) % 12
-    return SHICHEN[idx]
-
-
 def build_chart(date_str: str, time_str: str, name: str, gender: str) -> str:
     try:
         dt = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
     except ValueError:
         return '<div class=err>日期或时间格式不对。</div>'
 
-    solar = Solar.fromYmdHms(dt.year, dt.month, dt.day, dt.hour, dt.minute, 0)
-    lunar = solar.getLunar()
-    ec = lunar.getEightChar()
-
-    # EightChar 的四个柱。立春分年这块是精确到分钟的（已实测验证）。
-    pillars = [ec.getYear(), ec.getMonth(), ec.getDay(), ec.getTime()]
-    if dt.hour >= 23:
-        # 23:00-24:00 出生的，日柱按【次日】（早子时派）
-        nd = dt + timedelta(days=1)
-        pillars[2] = Solar.fromYmdHms(nd.year, nd.month, nd.day, nd.hour, nd.minute, 0).getLunar().getEightChar().getDay()
-        
-    wx = {}
-    for p in pillars:
-        for ch in p:
-            key = GAN_WX.get(ch) or ZHI_WX.get(ch)
-            if key:
-                wx[key] = wx.get(key, 0) + 1
+    pillars = compute_pillars(dt)          # ★ 算法在 core.py，这里只拿结果
+    wx = wuxing_count(pillars)
 
     cells = "".join(
         f'<div class=zhu><span>{ZHU_LABEL[i]}</span><b>{p[:1]}</b><b style="margin-top:-6px">{p[1:]}</b></div>'
         for i, p in enumerate(pillars))
 
     wx_line = "　".join(f"{k}{v}" for k, v in sorted(wx.items(), key=lambda x: -x[1]))
-    lunar_str = f"{lunar.getYear()}年{lunar.getMonthInChinese()}月{lunar.getDayInChinese()}日"
+    lunar_str = lunar_date_str(dt)
 
     return f"""<div class=zh>{cells}</div>
 <div class=wx><b>{name or '匿名'}</b>（{gender}）　{lunar_str}　{dt.strftime('%H:%M')} 生 → <b>{shichen_of(dt.hour)}时</b><br>

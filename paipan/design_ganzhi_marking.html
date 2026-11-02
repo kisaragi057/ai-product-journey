@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>干支字符级标注 · 阴阳与四库怎么画</title>
+<style>
+:root{--bg:#F7F6F3;--ink:#2b2b2b;--muted:#8a8781;--line:#e2ded7;--card:#fff;--warn:#B3261E}
+*{box-sizing:border-box}
+body{margin:0;padding:26px 20px 60px;background:var(--bg);color:var(--ink);
+ font-family:-apple-system,"PingFang SC","Hiragino Sans GB",sans-serif;font-size:14px;line-height:1.75}
+.wrap{max-width:1040px;margin:0 auto}
+h1{font-size:22px;font-weight:650;margin:0 0 6px}
+h2{font-size:15.5px;font-weight:650;margin:32px 0 4px}
+h3{font-size:13.5px;font-weight:650;margin:18px 0 8px}
+.sub{color:var(--muted);font-size:12.5px;margin-bottom:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:10px}
+.controls{display:flex;flex-wrap:wrap;gap:16px;margin:14px 0}
+fieldset{border:1px solid var(--line);border-radius:9px;padding:8px 12px;background:var(--card);margin:0}
+legend{font-size:11.5px;color:var(--muted);padding:0 5px}
+label{cursor:pointer;font-size:13px;margin-right:11px;white-space:nowrap}
+input{vertical-align:middle;margin-right:4px}
+.grid{display:flex;flex-wrap:wrap;gap:9px}
+.gz{position:relative;width:76px;padding:12px 8px 22px;border-radius:10px;border:1px solid var(--line);
+ border-left-width:4px;text-align:center;background:#fff}
+.gz .z{font-size:26px;font-weight:650;line-height:1.15;display:block}
+.gz .wx{font-size:11px;color:var(--muted)}
+.gz .mk{position:absolute;right:6px;top:5px;font-size:10.5px;line-height:1.3;text-align:right}
+.gz .yao{position:absolute;left:50%;transform:translateX(-50%);bottom:8px;width:26px;height:8px}
+.gz .yao i{position:absolute;top:3px;height:3px;background:currentColor;border-radius:1px}
+.gz .yao .full{left:0;width:26px}
+.gz .yao .halfA{left:0;width:11px}
+.gz .yao .halfB{right:0;width:11px}
+.gz .dotmk{position:absolute;right:6px;top:5px;width:9px;height:9px;border-radius:50%;border:2px solid currentColor}
+.gz .ku{position:absolute;left:0;bottom:0;width:100%;font-size:10px;color:var(--muted);text-align:center}
+.gz .kupip{position:absolute;left:7px;top:7px;width:8px;height:8px;border-radius:50%}
+table{border-collapse:collapse;width:100%;font-size:12.8px;margin-top:6px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+th{font-size:11.5px;color:var(--muted);font-weight:600}
+.bad{color:var(--warn);font-weight:650}
+.ok{color:#1F7A3D;font-weight:650}
+.note{background:#fff8e6;border:1px solid #f0e0b0;border-radius:10px;padding:14px 16px;font-size:13px;margin-top:12px}
+.danger{background:#fff2f0;border:1px solid #ffccc7;border-radius:10px;padding:14px 16px;font-size:13px;margin-top:12px}
+.small{font-size:12px;color:var(--muted)}
+.mono{font-family:ui-monospace,Menlo,monospace;font-size:12.2px}
+.hide{display:none}
+ol li,ul li{margin:6px 0}
+.pair{position:relative;width:92px;padding:16px 6px 8px;border:1px solid var(--line);border-radius:10px;background:#fff;text-align:center}
+.pair .lab{position:absolute;top:-19px;left:0;width:100%;font-size:10.5px;color:var(--muted)}
+.pair .part{display:flex;align-items:center;gap:5px;margin:5px 0;padding:6px 7px;border-radius:8px;
+ border-left:4px solid #ccc;justify-content:flex-start}
+.pair .part b{font-size:22px;font-weight:650;line-height:1;flex:none}
+.pair .part .m{font-size:10.5px;color:var(--muted);margin-left:auto;text-align:right;line-height:1.3}
+.pair .part .pip{width:8px;height:8px;border-radius:50%;flex:none}
+.pair .part .bar,.pair .part .ring,.pair .part .fill{display:inline-block;vertical-align:middle}
+.pair .part .bar{width:15px;height:3px;border-radius:1px;background:currentColor}
+.pair .part .bar.brk{width:15px;height:3px;background:linear-gradient(to right,currentColor 0 6px,transparent 6px 9px,currentColor 9px 15px)}
+.pair .part .ring{width:7px;height:7px;border-radius:50%;border:2px solid currentColor}
+.pair .part .fill{width:9px;height:9px;border-radius:50%;background:currentColor}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>干支字符级标注：阴阳与四库怎么画才看得懂</h1>
+<div class="sub">
+你的需求我理解成两件事：<b>①</b> 十天干、十二地支<b>每个字</b>都要带阴阳；<b>②</b> 地支里辰戌丑未这四个土还各自是某一行的「库」，
+一个字符身兼三层信息。数据全部来自 <span class="mono">paipan/core.py</span> + <span class="mono">lunar_python</span> 实测（藏干查了 40 天不随日期变），
+四库我用库的十二长生 API 逐个验过，来源在表底。
+</div>
+
+<div class="controls">
+ <fieldset><legend>地支的阴阳按哪个口径</legend>
+  <label><input type="radio" name="yx" value="branch" checked>按支性（子寅辰午申戌＝阳）</label>
+  <label><input type="radio" name="yx" value="benqi">按本气（子＝癸阴水）</label>
+ </fieldset>
+ <fieldset><legend>阴阳用什么标记</legend>
+  <label><input type="radio" name="mk" value="text" checked>文字 阳/阴</label>
+  <label><input type="radio" name="mk" value="yao">爻符（— / ─ ─）</label>
+  <label><input type="radio" name="mk" value="dot">实心/空心点</label>
+ </fieldset>
+ <fieldset><legend>四库怎么表达</legend>
+  <label><input type="radio" name="ku" value="pip" checked>左上小色点</label>
+  <label><input type="radio" name="ku" value="word">底部文字「未·木库」</label>
+  <label><input type="radio" name="ku" value="none">不画，只在藏干展开里看</label>
+ </fieldset>
+</div>
+
+<h2>先看一个必须知道的前提：地支有两个阴阳，而且四个支互相矛盾</h2>
+<div class="card">
+<table id="cmp"></table>
+<div class="small">「支性阴阳」是十二支自己的排序属性（奇偶）；「本气阴阳」是它藏着的第一位天干的阴阳。
+<b>子、午、巳、亥</b> 这四个支两个口径结论相反——所以你不是在选颜色，你是在<b>选口径</b>。
+上面那个开关切一下，看下面 12 张卡片会变色。</div>
+</div>
+
+<h2>十天干：属性唯一，随便怎么标都稳</h2>
+<div class="card"><div class="grid" id="ganGrid"></div>
+<div class="small">天干只有两层：五行 + 阴阳，且甲丙戊庚壬恒为阳、乙丁己辛癸恒为阴，<b>这是字的固有属性、不是算出来的数据</b>。
+固有属性的画法和数据不同——见下面第三节。</div></div>
+
+<h2>十二地支：三层信息挤在一个字上</h2>
+<div class="card"><div class="grid" id="zhiGrid"></div></div>
+
+<h2>四库（辰戌丑未）：实测结果</h2>
+<div class="card">
+<table>
+<tr><th>支</th><th>它是谁的库</th><th>依据（十二长生「墓」）</th><th>怎么验的</th></tr>
+<tr><td>未</td><td>木库</td><td>甲木 墓在未</td><td class="ok">实测：日干甲 + 未时 → 地势「墓」</td></tr>
+<tr><td>戌</td><td>火库</td><td>丙火 墓在戌</td><td class="ok">实测：丙戌日 → 地势「墓」</td></tr>
+<tr><td>丑</td><td>金库</td><td>庚金 墓在丑</td><td class="ok">实测：日干庚 + 丑时 → 地势「墓」</td></tr>
+<tr><td>辰</td><td>水库</td><td>壬水 墓在辰</td><td class="ok">实测：壬辰日 → 地势「墓」</td></tr>
+</table>
+<div class="note">
+<b>但你必须知道还有第二套：</b>这套库是按<b>阳干／五行</b>讲的（也是所有排盘网站显示的那套）。
+同一个库返回给我的是阴干逆行版：<span class="mono">癸未 → 墓</span>、<span class="mono">乙未 → 养</span>、<span class="mono">辛丑 → 养</span>——
+即 未 既是<b>阳木之库</b>又是<b>阴水之墓</b>。你的产品对外只讲一套就够，但要讲明是哪一套；
+两套都印上去，用户只会觉得你在糊弄。
+</div>
+</div>
+
+<h2>示例盘：2000-10-15 23:30（庚辰 · 丙戌 · 丁未 · 庚子）</h2>
+<div class="card"><div class="grid" id="chart"></div>
+<div class="small">特意选这个盘：四个支里 <b>辰、戌、未</b> 三个都是库，而 <b>子</b> 正是「支性阳 / 本气阴」那个矛盾支。
+上面三个开关怎么切，这一排都会跟着变——那就是你的产品未来的样子。</div></div>
+
+<h2>我的建议：三层信息，分三个地方放</h2>
+<div class="card">
+<ol>
+<li><b>固有属性不要用「视觉通道」编码，用固定记号。</b>阴阳对甲来说永远是阳——它不是数据，是字典。
+把它做成角标／爻符，用户查一次就记住了；做成颜色深浅，他每次都要回来对图例。
+<b>这一条也顺手解放了两个通道</b>：颜色留给五行、长度留给数量，各自只干一件事。</li>
+<li><b>地支的阴阳，选「支性」不选「本气」。</b>理由不是哪个更对，而是<b>支性是查表就得、永远不会和别的字段打架</b>；
+本气阴阳要看你有没有算藏干、藏干按不按司令，链条一长就会出现在四个矛盾支上自相矛盾的截图。</li>
+<li><b>四库放小色点，不放文字。</b>点用「被库那一行的颜色」——未上的绿点＝木库，不用新增图例，
+配色系统复用一次就够。文字「未·木库」看着清楚，但四个支都挂四个字，一排柱子就糊成说明书。
+真要展开，交给藏干那一层（第三节），库的信息本来就长在藏干里。</li>
+</ol>
+</div>
+
+<h2>明天开工第一件事（跟配色无关，但比配色急）</h2>
+<div class="danger">
+<b><span class="mono">core.compute_pillars()</span> 现在只替换了 <span class="mono">pillars[2]</span> 这一个字符串。</b>
+库里其余一切——<span class="mono">getDayHideGan</span> 藏干、<span class="mono">getDayDiShi</span> 地势、十神、纳音——
+仍然按<b>没有 +1 天</b>的那个日柱算。所以 23:00-24:00 出生的盘会拿到「日柱写未、藏干是午」的组合，
+<b>而且一行报错都不会有</b>。我自己 20 分钟前刚踩过一次（错把午的藏干当成未的，还据此说库和通行表不一致——那是我错了）。
+明天加藏干之前必须先把这个洞补掉：<b>要么用次日重建 <span class="mono">ec</span>，要么把藏干也按同一套规则重取。</b>
+</div>
+</div>
+
+<script>
+var WX = { "木":"#2E8B4A", "火":"#C43B2E", "土":"#A66A1E", "金":"#6E7B8B", "水":"#2A6FA8" };
+var YANG_G = "甲丙戊庚壬";
+
+var GAN = [["甲","木"],["乙","木"],["丙","火"],["丁","火"],["戊","土"],
+           ["己","土"],["庚","金"],["辛","金"],["壬","水"],["癸","水"]];
+
+// [支, 本气五行, 支性, 本气干, 藏干数组, 所库之行]
+var ZHI = [
+ ["子","水","阳","癸",["癸"],null],
+ ["丑","土","阴","己",["己","癸","辛"],"金"],
+ ["寅","木","阳","甲",["甲","丙","戊"],null],
+ ["卯","木","阴","乙",["乙"],null],
+ ["辰","土","阳","戊",["戊","乙","癸"],"水"],
+ ["巳","火","阴","丙",["丙","庚","戊"],null],
+ ["午","火","阳","丁",["丁","己"],null],
+ ["未","土","阴","己",["己","丁","乙"],"木"],
+ ["申","金","阳","庚",["庚","壬","戊"],null],
+ ["酉","金","阴","辛",["辛"],null],
+ ["戌","土","阳","戊",["戊","辛","丁"],"火"],
+ ["亥","水","阴","壬",["壬","甲"],null]
+];
+
+function byYin(g){ return YANG_G.indexOf(g) >= 0 ? "阳" : "阴"; }
+function findZhi(z){ for(var i=0;i<ZHI.length;i++) if(ZHI[i][0]===z) return ZHI[i]; return null; }
+
+function state(){
+  return { yx: document.querySelector('input[name=yx]:checked').value,
+           mk: document.querySelector('input[name=mk]:checked').value,
+           ku: document.querySelector('input[name=ku]:checked').value };
+}
+
+function tint(hex){
+  var r=parseInt(hex.substr(1,2),16), g=parseInt(hex.substr(3,2),16), b=parseInt(hex.substr(5,2),16);
+  return "rgba(" + r + "," + g + "," + b + ",0.10)";
+}
+
+function marker(kind, yin, color){
+  if(kind === "text")
+    return '<span class="mk" style="color:' + color + '">' + yin + "</span>";
+  if(kind === "dot")
+    return '<span class="dotmk" style="color:' + color + ';background:' +
+           (yin === "阳" ? color : "transparent") + '"></span>';
+  return '<span class="yao" style="color:' + color + '">' +
+         (yin === "阳" ? '<i class="full"></i>' : '<i class="halfA"></i><i class="halfB"></i>') + "</span>";
+}
+
+function kuMark(s, ku, wx){
+  if(!ku || s.ku === "none") return "";
+  if(s.ku === "pip")
+    return '<span class="kupip" title="' + ku + "库" + '" style="background:' + WX[ku] + '"></span>';
+  return '<span class="ku">' + ku + "库</span>";
+}
+
+function card(ch, wx, yin, ku, s, extra){
+  var col = WX[wx];
+  return '<div class="gz" style="border-left-color:' + col + ";background:" + tint(col) + '">' +
+         (extra || "") + kuMark(s, ku, wx) + marker(s.mk, yin, col) +
+         '<span class="z">' + ch + '</span><span class="wx">' + wx + "</span></div>";
+}
+
+function part(ch, wx, yin, ku, s){
+  var col = WX[wx];
+  var sym = s.mk === "text" ? yin
+          : (s.mk === "dot" ? '<span class="' + (yin === "阳" ? "fill" : "ring") + '" style="color:' + col + '"></span>'
+                            : '<span class="bar' + (yin === "阳" ? "" : " brk") + '" style="color:' + col + '"></span>');
+  var pip = (ku && s.ku === "pip") ? '<span class="pip" style="background:' + WX[ku] + '"></span>' : "";
+  var kuWord = (ku && s.ku === "word") ? "·" + ku + "库" : "";
+  return '<div class="part" style="border-left-color:' + col + ";background:" + tint(col) + '">' +
+         pip + "<b>" + ch + '</b><span class="m">' + wx + kuWord + "<br>" + sym + "</span></div>";
+}
+
+function render(){
+  var s = state();
+  var g = "";
+  GAN.forEach(function(a){ g += card(a[0], a[1], byYin(a[0]), null, s); });
+  document.getElementById("ganGrid").innerHTML = g;
+
+  var z = "";
+  ZHI.forEach(function(a){
+    var yin = s.yx === "branch" ? a[2] : byYin(a[3]);
+    var clash = (a[2] !== byYin(a[3]));
+    z += card(a[0], a[1], yin, a[5], s,
+         clash ? '<span class="mk" style="left:6px;right:auto;color:' + WX[a[1]] + ';opacity:.55">' +
+                 (s.yx === "branch" ? "本气" + byYin(a[3]) : "支性" + a[2]) + "</span>" : "");
+  });
+  document.getElementById("zhiGrid").innerHTML = z;
+
+  // 示例盘：日柱已按早子时规则进次日
+  var chart = [["庚","辰"],["丙","戌"],["丁","未"],["庚","子"]];
+  var names = ["年柱","月柱","日柱","时柱"];
+  var c = "";
+  chart.forEach(function(p, i){
+    var zz = findZhi(p[1]);
+    c += '<div class="pair"><span class="lab">' + names[i] + "</span>" +
+         part(p[0], byGanWx(p[0]), byYin(p[0]), null, s) +
+         part(zz[0], zz[1], s.yx === "branch" ? zz[2] : byYin(zz[3]), zz[5], s) +
+         "</div>";
+  });
+  document.getElementById("chart").innerHTML = c;
+
+  var h = "<tr><th>支</th><th>本气</th><th>支性阴阳</th><th>本气阴阳</th><th>两口径是否一致</th><th>库</th></tr>";
+  ZHI.forEach(function(a){
+    var b1 = a[2], b2 = byYin(a[3]);
+    h += "<tr><td>" + a[0] + "</td><td>" + a[3] + a[1] + "</td><td>" + b1 + "</td><td>" + b2 + "</td>" +
+         "<td>" + (b1 === b2 ? '<span class="ok">一致</span>' : '<span class="bad">矛盾 ←</span>') + "</td>" +
+         "<td>" + (a[5] ? a[5] + "库" : "-") + "</td></tr>";
+  });
+  document.getElementById("cmp").innerHTML = h;
+}
+
+function byGanWx(g){ for(var i=0;i<GAN.length;i++) if(GAN[i][0]===g) return GAN[i][1]; return "?"; }
+
+Array.prototype.forEach.call(document.querySelectorAll("input"), function(el){
+  el.addEventListener("change", render);
+});
+render();
+</script>
+</body>
+</html>
