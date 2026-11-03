@@ -57,6 +57,7 @@ button{{margin-top:18px;width:100%;padding:11px;background:#2b2b2b;color:#fff;bo
 {ver}</div></div></body></html>"""
 
 ZHU_LABEL = ["年柱", "月柱", "日柱", "时柱"]
+WX_ORDER = ["木", "火", "土", "金", "水"]     # 并列时按这个固定顺序，别依赖字典插入顺序
 
 
 def build_chart(date_str: str, time_str: str, name: str, gender: str) -> str:
@@ -72,7 +73,9 @@ def build_chart(date_str: str, time_str: str, name: str, gender: str) -> str:
         f'<div class=zhu><span>{ZHU_LABEL[i]}</span><b>{p[:1]}</b><b style="margin-top:-6px">{p[1:]}</b></div>'
         for i, p in enumerate(pillars))
 
-    wx_line = "　".join(f"{k}{v}" for k, v in sorted(wx.items(), key=lambda x: -x[1]))
+    # Day 16：缺的行也显示 0（「缺木」是用户真正想知道的事，不显示就等于藏起来）。
+    # 排序键固定成 (-个数, WX_ORDER)，这样同一份数据永远得到同一行字。
+    wx_line = "　".join(f"{w}{wx.get(w, 0)}" for w in sorted(WX_ORDER, key=lambda w: -wx.get(w, 0)))
     lunar_str = lunar_date_str(dt)
 
     return f"""<div class=zh>{cells}</div>
