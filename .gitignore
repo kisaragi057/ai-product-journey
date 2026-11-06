@@ -25,6 +25,9 @@ env/
 # ── 数据文件（通常体积大，另行管理）──
 data/
 *.csv
+*.db
+*.sqlite
+*.sqlite3
 *.xlsx
 !examples/*.csv
 

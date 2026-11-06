@@ -159,6 +159,70 @@ def chart_path(date_str: str, time: str | None = None,
         return bad_request(str(e))
 
 
+# ══════════════════════════════════════════════════════
+# Day 18：能存能查。数据库负责「用户记录」，CSV 负责「批量样本」，两回事
+# ══════════════════════════════════════════════════════
+from db import all_charts, connect, init as db_init, latest_for, row_to_dict, save_chart, stats
+
+
+def get_db():
+    """每个请求开一个连接。FastAPI 正经做法是依赖注入 + yield 关闭，
+    Day 18 先用最朴素的写法，第 10 周工程化时再换。"""
+    con = connect()
+    db_init(con)
+    return con
+
+
+@app.post("/charts")
+def save_chart_record(req: ChartRequest):
+    """排一次并存下来，返回 id 和完整盘。"""
+    try:
+        payload = build_payload(req.date, req.time, req.name, req.gender)
+    except ValueError as e:
+        return bad_request(str(e))
+    con = get_db()
+    try:
+        new_id = save_chart(con, payload)
+    finally:
+        con.close()
+    payload["saved"] = {"id": new_id, "table": "charts"}
+    return payload
+
+
+@app.get("/charts")
+def list_charts(name: str | None = Query(None, description="按姓名查历史；不给就返回最近全部"),
+                limit: int = Query(10, ge=1, le=100)):
+    """查历史。注意 LIMIT 有上限校验——不写 le=，有人能拿它拖库。"""
+    con = get_db()
+    try:
+        rows = latest_for(con, name, limit) if name else all_charts(con, limit)
+        return {"count": len(rows), "rows": [row_to_dict(r) for r in rows]}
+    finally:
+        con.close()
+
+
+@app.get("/charts/stats")
+def charts_stats():
+    """聚合下推到 SQL：GROUP BY 在数据库里做，不捞全表进 Python 数。"""
+    con = get_db()
+    try:
+        return {"by_day_master": [dict(r) for r in stats(con)]}
+    finally:
+        con.close()
+
+
+@app.delete("/charts/{chart_id}")
+def delete_chart(chart_id: int):
+    """删一条。SQL 里 DELETE 必须带 WHERE——不带就是清库，而它不会问你确认。"""
+    con = get_db()
+    try:
+        cur = con.execute("DELETE FROM charts WHERE id = ?", (chart_id,))
+        con.commit()
+    finally:
+        con.close()
+    return {"deleted": cur.rowcount, "id": chart_id}
+
+
 @app.post("/chart")
 def chart_post(req: ChartRequest):
     """请求体版：参数装在 JSON 里 POST 进来。字段多、含敏感信息、要给机器调用时用它。"""
