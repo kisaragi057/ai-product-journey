@@ -18,12 +18,14 @@ streamlit==1.66.0
 fastapi==0.162.0
 uvicorn==0.54.0
 
+# 读取 .env 配置（Day 19 加入，同一次就登记，不再重犯上面那条）
+python-dotenv==1.2.4
+
 # Jupyter 笔记本环境（全程使用）
 jupyter==1.1.1
 ipykernel==7.4.0
 
 # ── 后续会陆续加入 ──
-# python-dotenv            第 2 周：读取 .env 密钥文件
 # openai                   第 8 周：调用大模型（OpenAI 兼容格式）
 # chromadb                 第 9 周：向量数据库
 # pypdf / openpyxl         第 9 周：文档处理
