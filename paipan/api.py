@@ -36,18 +36,67 @@ paipan/api.py —— 八字排盘接口 v0.2（Day 17：把功能变成接口）
 端口用 8001，因为 8000 是 app.py（网页版）的。两个服务可以同时跑，端口不能撞。
 """
 
+import os
 from datetime import datetime
+from pathlib import Path as _P
 
 import uvicorn
-from fastapi import FastAPI, Query
+from dotenv import load_dotenv
+from fastapi import FastAPI, Query, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
+
+load_dotenv()          # 读项目根 .env；不存在就用下面的默认值
+
+
+def _env(key, default):
+    """os.getenv 拿到空字符串也要当「没设」处理，所以用 or 而不是 get 的默认值"""
+    return os.getenv(key) or default
+
+
+HOST = _env("PAIPAN_HOST", "127.0.0.1")
+PORT = int(_env("PAIPAN_PORT", "8001"))
+# ⚠ "*" 只是开发期方便。上线前必须换成具体域名——
+#   "*" 等于允许任何网页在用户浏览器里借他的身份读写你的接口。
+ALLOW_ORIGIN = _env("PAIPAN_ALLOW_ORIGIN", "*")
 
 from core import (GAN_WX, ZI_SECT, build_ec, compute_pillars, count_wx,
                   is_yang, lunar_date_str, shichen_of)
 
-app = FastAPI(title="八字排盘 API", version="0.2",
-              description="只算四柱、五行（本气 + 藏干两个口径）。不含大运、流年、真太阳时、解读。")
+app = FastAPI(title="八字排盘 API", version="0.3",
+              description="四柱 + 五行（本气/藏干两个口径）+ 排盘历史记录。"
+                          "不含大运、流年、真太阳时、解读。")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"] if ALLOW_ORIGIN == "*" else [o.strip() for o in ALLOW_ORIGIN.split(",")],
+    allow_methods=["GET", "POST", "DELETE"],
+    allow_headers=["*"],
+)
+
+
+@app.exception_handler(Exception)
+def unhandled_exception(request: Request, exc: Exception):
+    """500 = 服务器内部错误，是【我们】的问题，不是用户输入的问题。
+
+    关键：绝不把异常详情回给调用方。那会把文件路径、SQL、库内部结构
+    白送给陌生人。真实堆栈只进本地日志，用户只看到一个 error 码。
+    """
+    import traceback
+    # 锚在 __file__ 上，不跟启动目录走——上一版写 "data/api_errors.log"，
+    # 从项目根启动就会在仓库根新建一个 data/，从 paipan/ 启动才写到该去的地方。
+    log = _P(__file__).resolve().parent / "data" / "api_errors.log"
+    try:
+        log.parent.mkdir(parents=True, exist_ok=True)
+        with open(log, "a", encoding="utf-8") as f:
+            f.write(f"{datetime.now():%F %T} {request.method} {request.url.path}\n"
+                    f"{traceback.format_exc()}\n")
+    except OSError:
+        pass          # 日志写不进去也不能把异常再抛出去，否则 500 变启动失败
+    return JSONResponse(status_code=500,
+                        content={"error": "internal_error",
+                                 "message": "服务端异常，已记录日志，请不要用相同参数重试。"})
 
 TIME_FMT = "%H:%M"
 
@@ -211,16 +260,43 @@ def charts_stats():
         con.close()
 
 
+@app.get("/charts/{chart_id}")
+def get_one_chart(chart_id: int):
+    """读单条。REST 的形状：资源在 URL 里，动作在 HTTP 方法里。"""
+    con = get_db()
+    try:
+        row = con.execute("SELECT * FROM charts WHERE id = ?", (chart_id,)).fetchone()
+    finally:
+        con.close()
+    if row is None:
+        # 404 的语义只有一个：你指的这个【资源】不存在。
+        # 别为了"让它返回 200 + 空"而放弃 404——那样调用方就分不出
+        # 「这条被删了」和「我 id 写错了」。
+        return JSONResponse(status_code=404,
+                            content={"error": "not_found", "id": chart_id,
+                                     "message": "没有这条排盘记录（可能已删除，或 id 写错）"})
+    return row_to_dict(row)
+
+
 @app.delete("/charts/{chart_id}")
 def delete_chart(chart_id: int):
-    """删一条。SQL 里 DELETE 必须带 WHERE——不带就是清库，而它不会问你确认。"""
+    """删一条。SQL 的 DELETE 必须带 WHERE——不带就是清库，而且它不问你确认。
+
+    原来这里返回 200 + deleted:0，那是**假成功**：调用方以为删掉了。
+    删不到就 404，让失败可见。
+    """
     con = get_db()
     try:
         cur = con.execute("DELETE FROM charts WHERE id = ?", (chart_id,))
         con.commit()
+        n = cur.rowcount
     finally:
         con.close()
-    return {"deleted": cur.rowcount, "id": chart_id}
+    if n == 0:
+        return JSONResponse(status_code=404,
+                            content={"error": "not_found", "id": chart_id,
+                                     "message": "没有可删除的记录"})
+    return {"deleted": n, "id": chart_id}
 
 
 @app.post("/chart")
@@ -240,5 +316,7 @@ if __name__ == "__main__":
             p["pillars"]["hour"]] == direct, "接口和 core 分叉了！"
     assert p["totals"]["benqi"] == 8, "本气口径不是 8 个字"
     print("契约自查通过：接口 == core，本气 8 字")
-    print("→ http://127.0.0.1:8001/docs  （Ctrl+C 停止）")
-    uvicorn.run(app, host="127.0.0.1", port=8001, log_level="warning")
+    print(f"→ http://{HOST}:{PORT}/docs  （Ctrl+C 停止）")
+    print(f"   配置来自环境变量：PORT={PORT} HOST={HOST} CORS={ALLOW_ORIGIN} "
+          f"DB={_env('PAIPAN_DB', '(默认 paipan/data/charts.db)')}")
+    uvicorn.run(app, host=HOST, port=PORT, log_level="warning")

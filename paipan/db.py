@@ -21,10 +21,14 @@ paipan/db.py —— 排盘记录存进 SQLite（Day 18：数据库与 SQL 基础
     .venv/bin/python paipan/db.py
 """
 
+import os
 import sqlite3
 from pathlib import Path
 
-DB_PATH = Path(__file__).parent / "data" / "charts.db"
+# 配置走环境变量，不硬编码（Day 19）。默认值让本地开发零配置就能跑，
+# 但换机器 / 上线时不必改代码，只改 .env——这是 Day 11 那张 .env.example 的第一次实战。
+DEFAULT_DB = Path(__file__).parent / "data" / "charts.db"
+DB_PATH = Path(os.getenv("PAIPAN_DB", str(DEFAULT_DB)))
 
 # ── 表结构：先写在这里，再建表。DDL 是设计，不是副产品 ──
 SCHEMA = """
